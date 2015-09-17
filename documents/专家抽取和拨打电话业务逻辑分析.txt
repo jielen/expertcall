@@ -1,0 +1,87 @@
+
+--com.ufgov.server.BillServer
+--GET_BILL_SERVER_LIST_BY_STATUS 获取等待抽取的抽取单
+select * from EM_BILL_SERVER_LIST;--em_status 0:等待抽取, 4:抽取完成，8：抽取失败，6：暂停抽取
+
+--GET_EXPERT_NUM_FOR_SELECTION 获取当前抽取单还需要抽取的专家数量，不包括已经同意来的专家
+SELECT (B.NUM - A.NUM) NUM
+  FROM (SELECT NVL(COUNT(*), 0) NUM
+          FROM ZC_EM_EXPERT_EVALUATION
+         WHERE EM_BILL_CODE = '抽取单[2014]1419号'
+           AND EM_RESPONSE_STATUS = '9') A,
+       (SELECT NVL(SUM(EC.EXPERT_NUM), 0) NUM
+          FROM EM_EVALUATION_CONDITION EC
+         WHERE EC.EM_BILL_CODE = '抽取单[2014]1419号') B;
+         
+--GET_EVALUATION_CONDITION_LIST 当前单据的专家类别、抽取数量、呼叫信息、短信信息        
+SELECT EC.EM_EXPERT_TYPE_CODE, EC.EXPERT_NUM, B.EM_CALL_INFO, B.EM_MSG_INFO
+  FROM EM_EVALUATION_CONDITION EC, ZC_EM_EXPERT_PRO_BILL B
+ WHERE EC.EM_BILL_CODE = B.EM_BILL_CODE
+   AND B.EM_BILL_CODE = '抽取单[2014]1419号';
+   
+
+--GET_SELECTED_EXPERT_NUM 已经抽取的专家 
+SELECT NVL(COUNT(EM_EXPERT_CODE), 0) NUM
+  FROM ZC_EM_EXPERT_EVALUATION
+ WHERE EM_BILL_CODE = '抽取单[2014]1419号'
+   AND EM_EXPERT_TYPE_CODE = 'ET005'
+   AND EM_RESPONSE_STATUS ='9';
+
+--GET_EXPERT_LIST 获取当前单据上对应类别的专家，已经打过电话的、过滤的专家不在选择范围内
+SELECT *
+  FROM (SELECT *
+          FROM ZC_EM_B_EXPERT
+         WHERE EM_EXPERT_CODE NOT IN
+               (SELECT EM_EXPERT_CODE
+                  FROM EM_EXPERT_BILL_FILTER
+                 WHERE EM_BILL_CODE = '抽取单[2014]1419号')
+           AND EM_EXPERT_CODE NOT IN
+               (SELECT EM_EXPERT_CODE
+                  FROM ZC_EM_EXPERT_EVALUATION
+                 WHERE EM_BILL_CODE = '抽取单[2014]1419号')
+           AND EM_EXPERT_CODE NOT IN
+               (SELECT L.EM_EXPERT_CODE
+                  FROM EM_CALL_SERVER_LIST L
+                 WHERE  L.EM_BILL_CODE = '抽取单[2014]1419号'
+                   AND L.EM_EXPERT_TYPE_CODE = 'ET005')
+           AND EM_EXPERT_CODE IN
+               (SELECT EM_EXPERT_CODE
+                  FROM ZC_Em_Expert_Type_Join
+                 WHERE em_type_code like 'ET005' || '%')
+           AND EM_EXP_STATUS='enable' 
+         ORDER BY dbms_random.VALUE)
+ WHERE rownum < 100;
+
+--INSERT_EM_EXPERT_EVALUATION 插入选择到的专家到抽取记录表中，其他通知状态为0,即等待拨打电话
+/*INSERT INTO ZC_EM_EXPERT_EVALUATION
+  (EM_BILL_CODE, EM_EXPERT_CODE, EM_EXPERT_TYPE_CODE, EM_NOTICE_STATUS)
+VALUES
+  (?, ?, ?, ?);*/
+
+--INSERT_EM_CALL_SERVER_LIST 插入待拨打电话的专家记录，其iscall是0，即还未拨打
+INSERT INTO EM_CALL_SERVER_LIST
+  (OBJID,
+   EM_EXPERT_CODE,
+   EM_MOBILE,
+   ISCALL,
+   EM_BILL_CODE,
+   EM_CALL_MSG,
+   EM_PHONE_MSG)
+VALUES
+  ((SELECT NVL(MAX(OBJID), 0) + 1 FROM EM_CALL_SERVER_LIST),
+   ?,
+   ?,
+   ?,
+   ?,
+   ?,
+   ?);
+   
+EM_BILL_SERVER_LIST 
+
+
+--
+SELECT COUNT(*) CALLING_NUM
+  FROM EM_CALL_SERVER_LIST L
+ WHERE L.ISCALL <> '-1'
+   AND L.EM_BILL_CODE = '抽取单[2014]1419号'
+ GROUP BY EM_BILL_CODE;

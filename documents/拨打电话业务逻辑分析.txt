@@ -1,0 +1,47 @@
+--com.ufgov.server.CallServer
+
+--1
+--Map<String, String> expertWaitingForCall = ExpertUtil.getWaitingCallExpert();
+--GET_EM_CALL_SERVER_LIST 获取等待拨打电话的专家，包括那些电话没有反应的专家,一次电话都没打专家，其ISCALL为0
+--Object[] params = new Object[] { CallServer.CALL_NUM, 0 };
+SELECT C.*
+  FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B
+ WHERE C.EM_BILL_CODE = B.EM_BILL_CODE
+   AND B.EM_BILL_STATUS = 'SELECTING'
+   AND C.ISCALL < ?
+   AND C.ISCALL >= ?
+   and c.em_expert_code not in
+       (select e.em_expert_code
+          from ZC_EM_EXPERT_EVALUATION e
+         where e.em_bill_code = b.em_bill_code--同意参加的不再拨打电话
+           and e.em_response_status ='9'
+         union
+         select e.em_expert_code
+          from EM_CALL_EXPERT_RECORD r
+         where r.em_bill_code = e.em_bill_code--呼叫记录达到3次、明确拒绝的不再拨打电话
+           and r.em_expert_code = e.em_expert_code
+           and r.call_num = '3' or r.call_state='8'  
+           )
+ ORDER BY c.ISCALL;
+--   and c.em_expert_code not in( select e.em_expert_code from EM_CALL_EXPERT_RECORD r where r.em_bill_code=e.em_bill_code and r.em_expert_code=e.em_expert_code where r.call_num = '3' or r.call_state='8')
+
+
+--2
+--GET_EM_CALL_EXPERT_NUM
+SELECT M.*, D.CALL_STATE
+  FROM EM_CALL_EXPERT_RECORD D,
+       (SELECT NVL(MAX(D.CALL_NUM), 0) AS CALL_NUM,
+               EM_BILL_CODE,
+               EM_EXPERT_CODE
+          FROM EM_CALL_EXPERT_RECORD D
+         WHERE D.EM_BILL_CODE = '抽取单[2014]1419号'
+           AND D.EM_EXPERT_CODE = ?
+         GROUP BY EM_BILL_CODE, EM_EXPERT_CODE) M
+ WHERE D.EM_BILL_CODE = '抽取单[2014]1419号'
+   AND D.EM_EXPERT_CODE = ?
+   AND D.CALL_NUM = M.CALL_NUM;
+
+
+
+
+
