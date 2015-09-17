@@ -1,0 +1,1 @@
+java -Xmx1000m -Djava.ext.dirs=D:\workplace\eclipseWorkplace\ExpertCall\lib -cp . com.ufgov.server.ServiceContext
