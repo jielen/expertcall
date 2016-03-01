@@ -18,29 +18,25 @@ import org.apache.log4j.Logger;
 
 public class DAOFactory {
 
-	private static final Logger logger=Logger.getLogger(DAOFactory.class);
-	
-  private static final String HOST_NAME = ApplicationContext.singleton().getValueAsString("hostname");
+  private static final Logger logger = Logger.getLogger(DAOFactory.class);
 
-  private static final String PORT = ApplicationContext.singleton().getValueAsString("port");
-
-  private static final String SID = ApplicationContext.singleton().getValueAsString("sid");
-
-  private static final String USER_NAME = ApplicationContext.singleton().getValueAsString("username");
-
-  private static final String PASSWORD = ApplicationContext.singleton().getValueAsString("password");
-
-  private static final String URI = "jdbc:oracle:thin:@${HOST_NAME}:${PORT}:${SID}".replace("${HOST_NAME}",
-    HOST_NAME).replace("${PORT}", PORT).replace("${SID}", SID);
+//  private static final String HOST_NAME = ApplicationContext.singleton().getValueAsString("hostname");
+//
+//  private static final String PORT = ApplicationContext.singleton().getValueAsString("port");
+//
+//  private static final String SID = ApplicationContext.singleton().getValueAsString("sid");
+//
+//  private static final String USER_NAME = ApplicationContext.singleton().getValueAsString("username");
+//
+//  private static final String PASSWORD = ApplicationContext.singleton().getValueAsString("password");
+//
+//  private static final String URI = "jdbc:oracle:thin:@${HOST_NAME}:${PORT}:${SID}".replace("${HOST_NAME}", HOST_NAME).replace("${PORT}", PORT).replace("${SID}", SID);
   
-  private static DAOFactory DAOFactory = null;
-  
-  public DAOFactory() {
-  }
 
+  public DAOFactory() {}
 
   @SuppressWarnings("unchecked")
-  public static void setStatementParameters(PreparedStatement stmt, Object[] params) throws SQLException {
+  public  void setStatementParameters(PreparedStatement stmt, Object[] params) throws SQLException {
     for (int i = 0; i < params.length; ++i) {
       Object o = params[i];
       if (null == o) {
@@ -55,15 +51,7 @@ public class DAOFactory {
   }
 
   
-  public static synchronized DAOFactory getInstance() {
-	    if (DAOFactory == null)
-	      DAOFactory = new DAOFactory();
-	    return DAOFactory;
-  }
-  
-
-
-  public static List<Map<String, String>> getResultList(ResultSet rs) throws SQLException {
+  public  List<Map<String, String>> getResultList(ResultSet rs) throws SQLException {
     List<Map<String, String>> result = new ArrayList<Map<String, String>>();
     String[] column = getColumn(rs);
     Map<String, String> row;
@@ -72,8 +60,7 @@ public class DAOFactory {
       row = new HashMap<String, String>();
       for (int i = 0, j = column.length; i < j; i++) {
         value = rs.getString(i + 1);
-        if (value == null)
-          value = "";
+        if (value == null) value = "";
         row.put(column[i], value);
       }
       result.add(row);
@@ -81,7 +68,7 @@ public class DAOFactory {
     return result;
   }
 
-  private static String[] getColumn(ResultSet rs) throws SQLException {
+  private  String[] getColumn(ResultSet rs) throws SQLException {
     ResultSetMetaData rsmd = rs.getMetaData();
     int columnCount = rsmd.getColumnCount();
     String[] column = new String[columnCount];
@@ -90,72 +77,132 @@ public class DAOFactory {
     }
     return column;
   }
-  
-  private static List<Connection> pools=new ArrayList<Connection>();
-  
-  private static int poolSize=5;
-  
-  public static synchronized Connection getConnection() throws SQLException {
-	  if(pools.size()==0){
-			 try {
-			     Class.forName("oracle.jdbc.driver.OracleDriver");
-			 } catch (ClassNotFoundException e) {
-			     e.printStackTrace();
-			     throw new RuntimeException(e);
-			 }
-			  for(int i=0;i<poolSize;i++){
-				  Connection conn = DriverManager.getConnection(URI, USER_NAME, PASSWORD);
-				  pools.add(conn);
-			  } 
-	  }
-	  if(pools.size()>0){
-		  Connection con=pools.get(pools.size()-1);
-		  pools.remove(pools.size()-1);
-		  return con;
-	  }else{
-		  throw new SQLException("无法获取数据库连接");
-	  }
-  }
-  
-  public static void closeConnection(Connection conn, Statement stmt, ResultSet rs) {
+
+  private  Connection getConnection() throws EmCallException {
+   /* if (pools.size() == 0) {
+      try {
+        Class.forName("oracle.jdbc.driver.OracleDriver");
+        for (int i = 0; i < poolSize; i++) {
+          Connection conn = DriverManager.getConnection(URI, USER_NAME, PASSWORD);
+          pools.add(conn);
+        }
+      } catch (ClassNotFoundException e) {
+        //			     e.printStackTrace();
+        throw new EmCallException("无法加载数据库驱动：oracle.jdbc.driver.OracleDriver.\n" + e.getMessage(), e);
+      } catch (SQLException e) {
+        throw new EmCallException("无法建立数据库连接.\n" + e.getMessage(), e);
+      }
+    }
+    if (pools.size() > 0) {
+      Connection con = pools.get(pools.size() - 1);
+      pools.remove(pools.size() - 1);
+      try {
+        if (con.isClosed()) {
+          return getConnection();
+        } else {
+          return con;
+        }
+      } catch (Exception e) {
+        throw new EmCallException("无法获取数据库连接。\n" + e.getMessage(), e);
+      }
+    } else {
+      throw new EmCallException("无法获取数据库连接.连接池为空.");
+    }*/
+
+    Connection con=null;
     try {
-      if (null != rs) {
-        rs.close();
+      con = MyConnectionPool.getInstance().getConnection();
+    } catch (SQLException e) {
+      throw new EmCallException("获取数据库连接异常。\n"+e.getMessage(),e);
+    }
+    if (con==null) {
+        throw new EmCallException("无法获取数据库连接。\n");
+    } else {
+      return con;
+    }
+  }
+
+  public  void closeConnection(Connection conn, Statement stmt, ResultSet rs)  {
+    _closeResultSet(rs);
+    _closeStatement(stmt);
+    _closeConnetion(conn);
+  }
+
+  private  void _closeConnetion(Connection conn){
+    if (null == conn) return;
+    /*try {
+      if (conn.isClosed()) return;
+      if (!conn.getAutoCommit()) {
+        conn.setAutoCommit(true);
+      }
+      if (pools.size() >= poolSize) {
+        conn.close();
+      } else {
+        pools.add(conn);
       }
     } catch (SQLException e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
+      throw new SQLException("关闭Connection异常.\n" + e.getMessage(), e);
+    }*/
+    MyConnectionPool.getInstance().returnConnection(conn);
+  }
+
+  private  void _closeStatement(Statement stmt)  {
     try {
       if (null != stmt) {
         stmt.close();
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      throw new RuntimeException(e);
+      logger.error("关闭Statement异常\n"+e.getMessage(),e);    
     }
-    
-      if (null != conn ) {
-        pools.add(conn);
-      }
   }
 
-
-  public static int executeUpdate(Connection conn, String sql, Object[] params) throws SQLException {
-    PreparedStatement stmt = null;
+  private  void _closeResultSet(ResultSet rs)  {
     try {
-      stmt = conn.prepareStatement(sql);     
+      if (null != rs) {
+        rs.close();
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      logger.error("关闭ResultSet异常\n"+e.getMessage(),e);   
+    }
+  }
+ 
+  public  int executeUpdate(String sql, Object[] params) throws EmCallException {
+    PreparedStatement stmt = null;
+    Connection conn = null;
+    try {
+      conn = getConnection();
+      stmt = conn.prepareStatement(sql);
       if (null != params && params.length > 0) {
         setStatementParameters(stmt, params);
       }
       return stmt.executeUpdate();
+    } catch (SQLException e) {
+      StringBuffer sb = new StringBuffer();
+      sb.append("更新异常.\n");
+      sb.append("sql:【").append(sql).append("】\n");
+      if (params != null) {
+        sb.append("sql参数数量=").append(params.length).append("\n").append("具体参数:");
+        for (int i = 0; i < params.length; i++) {
+          if (i == 0) {
+            sb.append("【").append(params[i]).append("】");
+          } else {
+            sb.append(",【").append(params[i]).append("】");
+          }
+        }
+      } else {
+        sb.append("参数为 null.\n");
+      }
+      sb.append(e.getMessage());
+      throw new EmCallException(sb.toString(), e);
     } finally {
-      closeConnection(null, stmt, null);
+      closeConnection(conn, stmt, null);
     }
   }
 
-  public static List<Map<String, String>> queryToListMap(String sql, Object[] params) throws SQLException {
-	  
+  public  List<Map<String, String>> queryToListMap(String sql, Object[] params) throws EmCallException {
+
     Connection conn = null;
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -163,19 +210,36 @@ public class DAOFactory {
       conn = getConnection();
       stmt = conn.prepareStatement(sql);
       if (null != params && params.length > 0) {
-        setStatementParameters(stmt, params);		
+        setStatementParameters(stmt, params);
       }
       rs = stmt.executeQuery();
       return getResultList(rs);
     } catch (SQLException e) {
-      e.printStackTrace();
+      StringBuffer sb = new StringBuffer();
+      sb.append("查询异常.\n");
+      sb.append("sql:【").append(sql).append("】\n");
+      if (params != null) {
+        sb.append("sql参数数量=").append(params.length).append("\n").append("具体参数:");
+        for (int i = 0; i < params.length; i++) {
+          if (i == 0) {
+            sb.append("【").append(params[i]).append("】");
+          } else {
+            sb.append(",【").append(params[i]).append("】");
+          }
+        }
+      } else {
+        sb.append("参数为 null.\n");
+      }
+      sb.append(e.getMessage());
+      throw new EmCallException(sb.toString(), e);
+    } catch (EmCallException e) {
       throw e;
     } finally {
       closeConnection(conn, stmt, rs);
     }
   }
 
-  public static Map<String, String> queryToColumnMap(String sql, Object[] params) throws SQLException {
+  public  Map<String, String> queryToColumnMap(String sql, Object[] params) throws EmCallException {
     List<Map<String, String>> list = queryToListMap(sql, params);
     return list.size() > 0 ? list.get(0) : null;
   }

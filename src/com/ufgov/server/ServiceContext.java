@@ -38,7 +38,7 @@ public class ServiceContext {
 					call.setTsf(tsf);
 					call.setthreadNum(i);
 					call.start();
-                    callServerList.add(call);
+          callServerList.add(call);
 					sleep(30000);
 				}
 			} catch (InterruptedException e) {
@@ -86,7 +86,7 @@ public class ServiceContext {
         return dir.delete();
 }
 
-public void initSsmCard() throws NativeException, IllegalAccessException {
+  private void initSsmCard() throws NativeException, IllegalAccessException {
     System.loadLibrary("SHP_A3");
     String shConfig = ApplicationContext.singleton().getValueAsString("shConfig");
     String shIndex = ApplicationContext.singleton().getValueAsString("shIndex");

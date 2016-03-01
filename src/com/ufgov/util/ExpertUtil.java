@@ -6,10 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
 import com.ufgov.server.CallServer;
 
 public class ExpertUtil {
+  
+  private static Logger logger=Logger.getLogger(ExpertUtil.class);
   
 	/*
 	 * 等待打电话的专家信息
@@ -25,13 +29,17 @@ public class ExpertUtil {
    * 获取等待打电话的专家
  * @param callServer 
    * @return
-   * @throws Exception
+   * @throws EmCallException 
    */
-  public static synchronized Map<String, String>  getWaitingCallExpert()throws Exception {
+  public static synchronized Map<String, String>  getWaitingCallExpert() throws EmCallException {
     Map<String, String> expertInfo=new HashMap<String, String>();
     if(waitingCallExpertList==null || waitingCallExpertList.size()==0){
-    	Object[] params = new Object[] { CallServer.CALL_NUM, 0 };
-        waitingCallExpertList = DAOFactory.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST, params); 
+    	Object[] params = new Object[] { CallServer.CALL_NUM, 0,CallServer.CALL_NUM};
+      DAOFactory df=new DAOFactory();
+        waitingCallExpertList = df.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST, params);  
+        logger.info("++++++获取等待打电话的专家");
+        logger.info("++++++"+CallServer.GET_EM_CALL_SERVER_LIST);
+        logger.info("++++++"+CallServer.CALL_NUM+",0,"+CallServer.CALL_NUM);
     }
     
     if (waitingCallExpertList ==null || waitingCallExpertList.size() ==0)
