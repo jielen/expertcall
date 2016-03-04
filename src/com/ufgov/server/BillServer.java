@@ -1,7 +1,5 @@
 package com.ufgov.server;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +77,7 @@ public class BillServer extends Thread {
     while (true) {
       try {
         scan();
-        logger.info("扫描间隔 10s");
+//        logger.info("扫描间隔 10s");
         Thread.sleep(scanIntervalTime);
       } catch (InterruptedException e) {
         // TODO Auto-generated catch block
@@ -121,9 +119,9 @@ public class BillServer extends Thread {
 
     Object[] params = new Object[] {emBillCode };
     String sql = "SELECT COUNT(*) AS SUM FROM EM_CALL_SERVER_LIST C WHERE C.ISCALL =0  AND C.EM_BILL_CODE=?";
-    logger.info("==========是否存在等待呼叫记录");
-    logger.info("=========="+sql);
-    logger.info("=========="+emBillCode);
+//    logger.info("==========是否存在等待呼叫记录");
+//    logger.info("=========="+sql);
+//    logger.info("=========="+emBillCode);
     DAOFactory df=new DAOFactory();
     Map<String, String> billMap = df.queryToColumnMap(sql, params);
     if (billMap != null) {
@@ -157,9 +155,9 @@ public class BillServer extends Thread {
     // 8-不参加
     DAOFactory df=new DAOFactory();
     Map<String, String> expertNumMap = df.queryToColumnMap(GET_EXPERT_NUM_FOR_SELECTION, params);
-    logger.info("==========获取当前抽取单还需要抽取的专家数量");
-    logger.info("=========="+GET_EXPERT_NUM_FOR_SELECTION);
-    logger.info("=========="+emBillCode);
+//    logger.info("==========获取当前抽取单还需要抽取的专家数量");
+//    logger.info("=========="+GET_EXPERT_NUM_FOR_SELECTION);
+//    logger.info("=========="+emBillCode);
     // 获取当前单据需要抽取专家的数量
     int needExpertNum = Integer.parseInt(expertNumMap.get("NUM"));
     List failTypeLst = new ArrayList();
@@ -168,9 +166,9 @@ public class BillServer extends Thread {
       params = new Object[] { emBillCode };
       // 当前单据的专家类别、抽取数量、呼叫信息、短信信息
       List<Map<String, String>> ecList = df.queryToListMap(GET_EVALUATION_CONDITION_LIST, params);
-      logger.info("==========获取当前单据的专家类别、抽取数量、呼叫信息、短信信息");
-      logger.info("=========="+GET_EVALUATION_CONDITION_LIST);
-      logger.info("=========="+emBillCode);
+//      logger.info("==========获取当前单据的专家类别、抽取数量、呼叫信息、短信信息");
+//      logger.info("=========="+GET_EVALUATION_CONDITION_LIST);
+//      logger.info("=========="+emBillCode);
       // 专家数量不够的类别
       for (Map<String, String> mcMap : ecList) {
         String emExpertTypeCode = mcMap.get("EM_EXPERT_TYPE_CODE");
@@ -180,19 +178,19 @@ public class BillServer extends Thread {
         String emMsgInfo = mcMap.get("EM_MSG_INFO");
         params = new Object[] { emBillCode, emExpertTypeCode };
         Map<String, String> senMap = df.queryToColumnMap(GET_SELECTED_EXPERT_NUM, params);
-        logger.info("==========已经抽取的专家,包括同意参加的专家");
-        logger.info("=========="+GET_SELECTED_EXPERT_NUM);
-        logger.info("=========="+emBillCode+","+emExpertTypeCode);
+//        logger.info("==========已经抽取的专家,包括同意参加的专家");
+//        logger.info("=========="+GET_SELECTED_EXPERT_NUM);
+//        logger.info("=========="+emBillCode+","+emExpertTypeCode);
 
         int selectedExpertNumWithType = Integer.parseInt(senMap.get("NUM") == null ? "0" : senMap.get("NUM"));// 这个类别已经选择到的专家
-        logger.info("=============needExpertNumWithType="+needExpertNumWithType);
-        logger.info("=============selectedExpertNumWithType="+selectedExpertNumWithType);
+//        logger.info("=============needExpertNumWithType="+needExpertNumWithType);
+//        logger.info("=============selectedExpertNumWithType="+selectedExpertNumWithType);
         if (needExpertNumWithType > selectedExpertNumWithType) {
           params = new Object[] { emBillCode, emBillCode, emBillCode, emBillCode, emExpertTypeCode, emExpertTypeCode };
           List<Map<String, String>> expertList = df.queryToListMap(GET_EXPERT_LIST, params);
-          logger.info("==========获取当前单据上对应类别的专家，已经打过电话的、过滤的专家不在选择范围内 ");
-          logger.info("=========="+GET_EXPERT_LIST);
-          logger.info("=========="+emBillCode+","+emExpertTypeCode);
+//          logger.info("==========获取当前单据上对应类别的专家，已经打过电话的、过滤的专家不在选择范围内 ");
+//          logger.info("=========="+GET_EXPERT_LIST);
+//          logger.info("=========="+emBillCode+","+emExpertTypeCode);
           //
           if (expertList == null && expertList.size() == 0) {// 没有搜到专家，说明专家都抽取完了，还没有找到专家
             failTypeLst.add(emExpertTypeCode);
@@ -214,14 +212,14 @@ public class BillServer extends Thread {
 
               params = new Object[] { expertCode, emMobile, 0, emBillCode, emCallInfo, emMsgInfo, emExpertTypeCode };
               df.executeUpdate(INSERT_EM_CALL_SERVER_LIST, params);// 插入选择到的专家到呼叫表中，其iscall是0，即还未拨打
-              logger.info("============= 插入选择到的专家到呼叫表中，其iscall是0，即还未拨打");
-              logger.info("============="+INSERT_EM_CALL_SERVER_LIST);
+//              logger.info("============= 插入选择到的专家到呼叫表中，其iscall是0，即还未拨打");
+//              logger.info("============="+INSERT_EM_CALL_SERVER_LIST);
               StringBuffer sb=new StringBuffer("=============params=");
               sb.append(expertCode).append(",").append(emBillCode).append(",0,").append(emBillCode).append(",").append(emCallInfo).append(",").append(emMsgInfo).append(",").append(emExpertTypeCode);
               
-              logger.info(sb.toString());              
+//              logger.info(sb.toString());              
               j++;
-              logger.info("=============j="+j);
+//              logger.info("=============j="+j);
               if (j >= needExpertNumWithType - selectedExpertNumWithType) {
                 // 获得需要抽取的专家数量=(需要的数量-已经抽取数量)
                 break;

@@ -30,7 +30,7 @@ SELECT * FROM AS_NUM_TOOL_NO N WHERE N.NUM_TOOL_ID like 'ZC_EB_QB_GEN%' for upda
 
 select * from AS_NO_RULE_SEG r where r.compo_id='ZC_EB_QB' for update;
 
-select * from as_val v where v.valset_id like 'ZC_VS_HUIYUAN_ATTACH_TYPE1' for update;
+select * from as_val v where v.valset_id like 'ZC_VS_DD_STATUS' for update;
 
 select * from as_option O WHERE O.OPT_ID LIKE 'ZC_OPT_EXPERT_FAKE_SELECT' for update;
 

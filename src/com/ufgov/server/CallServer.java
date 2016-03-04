@@ -1,9 +1,7 @@
 package com.ufgov.server;
 
 import java.io.File;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +10,6 @@ import org.apache.log4j.Logger;
 import org.xvolks.jnative.exceptions.NativeException;
 import org.xvolks.jnative.pointers.Pointer;
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Discarder;
 import com.ufgov.ssm.SSMFactory;
 import com.ufgov.tts.TTSFactory;
 import com.ufgov.util.ApplicationContext;
@@ -330,8 +327,8 @@ public class CallServer extends Thread {
 			}
 		}		
 		
-		logger.info("第" +  callNum + "次呼叫电话:"+ emMobile);		
-		logger.info("线程"+threadNum+" 抽取单号==="+emBillCode+" objid===="+objID);
+//		logger.info("第" +  callNum + "次呼叫电话:"+ emMobile);		
+//		logger.info("线程"+threadNum+" 抽取单号==="+emBillCode+" objid===="+objID);
 		call(emMobile, playFilePath, emExpertCode, objID, emBillCode, callNum,expertType);	
 		}catch(EmCallException e){
 		  e.printStackTrace();
@@ -424,6 +421,7 @@ public class CallServer extends Thread {
 			int timmer = 0;
 			while (ch == -1 && timmer < 10000) {
 				ch = SSMFactory.ssmSearchIdleCallOutCh(1, 0);
+//				logger.info("ch=" + ch);
 				Thread.sleep(10);
 				timmer += 10;
 			}
@@ -473,7 +471,7 @@ public class CallServer extends Thread {
 			SSMFactory.ssmClearAMDResult(ch);
 			//如果在30秒的时间内没有拨通电话，认为呼叫失败					
 			if (chkAuto == -1 || timmer == 30000 || chkAuto == 12) {
-				logger.error("专家(编号:"+emExpertCode+")电话号码为空号，请核对专家库中的专家电话号码！");
+				logger.error("专家(编号:"+emExpertCode+")电话号码为空号，请核对专家库中的专家电话号码！chkAuto="+chkAuto+",timmer="+timmer);
 				SSMFactory.ssmHangup(ch);
 				updateCallingStatus(CallServer.CALL_STATUS_NULL_PHONE_NUMBER, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
 				return;
