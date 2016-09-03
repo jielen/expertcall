@@ -25,12 +25,51 @@ import com.ufgov.util.ExpertUtil;
 public class CallServer extends Thread {
 	private static Logger logger = Logger.getLogger(CallServer.class);
 
-	//获取等待拨打电话的专家，不包括同意或者拒绝的专家
-	public static final String GET_EM_CALL_SERVER_LIST = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+	//获取等待拨打电话的专家，不包括同意或者拒绝的专家，财政局还是用这种代码
+	 public static final String GET_EM_CALL_SERVER_LIST_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
 			" and c.em_expert_code not in("+
        " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
        " union "+
-       " select distinct vr.em_expert_code from (select r.em_bill_code,r.em_expert_code from em_call_expert_record r where r.call_num = ? or r.call_state = '8') vr where vr.em_bill_code = c.em_bill_code and vr.em_expert_code = c.em_expert_code)";	//呼叫记录达到1次、明确拒绝的不再拨打电话
+       " select distinct vr.em_expert_code from (select r.em_bill_code,r.em_expert_code from em_call_expert_record r where r.call_num = ? or r.call_state = '8') vr where vr.em_bill_code = c.em_bill_code and vr.em_expert_code = c.em_expert_code " +  //呼叫记录达到1次、明确拒绝的不再拨打电话
+     " union "+//专家同意参加和当前单据的评标时间是同一天的其他项目，不再拨打电话
+     " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
+         " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
+         " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
+      " )  ";
+      //获取等待拨打电话的专家，不包括同意或者拒绝的专家，财政局还是用这种代码,支持多电话卡抽取
+      public static final String GET_EM_CALL_SERVER_LIST2_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+      " and c.em_expert_code not in("+
+       " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
+       " union "+
+       " select distinct vr.em_expert_code from (select r.em_bill_code,r.em_expert_code from em_call_expert_record r where r.call_num = ? or r.call_state = '8') vr where vr.em_bill_code = c.em_bill_code and vr.em_expert_code = c.em_expert_code " +  //呼叫记录达到1次、明确拒绝的不再拨打电话
+     " union "+//专家同意参加和当前单据的评标时间是同一天的其他项目，不再拨打电话
+     " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
+         " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
+         " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
+      " )  ";
+   
+	//代理机构改成用视图获取专家电话信息，这样可以不同的时候，调整这个视图的电话号码，如前面加9等,财政局还是用上面的代码
+	public static final String GET_EM_CALL_SERVER_LIST = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+    " and c.em_expert_code not in("+
+     " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
+     " union "+
+     " select distinct vr.em_expert_code from (select r.em_bill_code,r.em_expert_code from em_call_expert_record r where r.call_num = ? or r.call_state = '8') vr where vr.em_bill_code = c.em_bill_code and vr.em_expert_code = c.em_expert_code " +  //呼叫记录达到1次、明确拒绝的不再拨打电话
+     " union "+//专家同意参加和当前单据的评标时间是同一天的其他项目，不再拨打电话
+     " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
+         " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
+         " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
+      " )  ";
+//代理机构改成用视图获取专家电话信息，这样可以不同的时候，调整这个视图的电话号码，如前面加9等,财政局还是用上面的代码, 支持多电话卡抽取
+  public static final String GET_EM_CALL_SERVER_LIST2 = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+    " and c.em_expert_code not in("+
+     " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
+     " union "+
+     " select distinct vr.em_expert_code from (select r.em_bill_code,r.em_expert_code from em_call_expert_record r where r.call_num = ? or r.call_state = '8') vr where vr.em_bill_code = c.em_bill_code and vr.em_expert_code = c.em_expert_code " +  //呼叫记录达到1次、明确拒绝的不再拨打电话
+     " union "+//专家同意参加和当前单据的评标时间是同一天的其他项目，不再拨打电话
+     " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
+         " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
+         " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
+      " )  ";
 
 	//private static final String GET_EM_CALL_EXPERT_NUM = "SELECT NVL(MAX(D.CALL_NUM),0) AS CALL_NUM,CALL_STATE FROM EM_CALL_EXPERT_RECORD D WHERE D.EM_BILL_CODE =? AND D.EM_EXPERT_CODE =?";
 	
@@ -47,7 +86,7 @@ public class CallServer extends Thread {
 
 //	private static final String UPDATE_EM_EXPERT_EVALUATION = "update ZC_EM_EXPERT_EVALUATION set EM_RESPONSE_STATUS =? where EM_EXPERT_CODE = ? and EM_BILL_CODE = ?";
 
-	private static final String UPDATE_EM_CALL_EXPERT_RECORD = "update EM_CALL_EXPERT_RECORD set call_state=? where em_bill_code=? and em_expert_code=? and call_num=?";
+	private static final String UPDATE_EM_CALL_EXPERT_RECORD = "update EM_CALL_EXPERT_RECORD set call_state=? where em_bill_code=? and em_expert_code=? and call_num=?  ";
 
 	public static final String VOICE_DIR = System.getProperty("user.dir")
 			+ File.separator + "voices";
@@ -92,6 +131,12 @@ public class CallServer extends Thread {
 	 * 空号
 	 */
 	private static final String CALL_STATUS_NULL_PHONE_NUMBER = "null_phone_number";
+	
+
+  /*
+   * 没有在线路上检测到拨号音
+   */
+  private static final String CALL_STATUS_NO_SIGNAL = "NO_SIGNAL";
 
 	/*
 	 * 无人接听
@@ -277,10 +322,10 @@ public class CallServer extends Thread {
 				ExpertUtil.compeletCalling(objID);
 				sleep(3000);
 			} catch (Exception e) {
+			  logger.error("呼叫专家方法 scan出现异常\n"+e.getMessage(),e);
 				e.printStackTrace();
-				logger.error(e.getMessage(), e);
-				ExpertUtil.compeletCalling(objID);	
-				clearCallServer();
+				//目前出现呼叫失败，就不往下抽取了。估计问题出在这里，暂时把它注释掉，运行一段时间观察一下
+//				ExpertUtil.compeletCalling(objID); 
 			}
 		}
 
@@ -292,51 +337,102 @@ public class CallServer extends Thread {
 		}
 	}
 
-	public void scan(){
+	public void scan() throws EmCallException {
 		try{
-		Map<String, String> expertWaitingForCall = ExpertUtil.getWaitingCallExpert();
-		if (expertWaitingForCall == null || expertWaitingForCall.size() == 0) {
-			return;
-		}
-		
-		objID = expertWaitingForCall.get("OBJID");
-		String emExpertCode = expertWaitingForCall.get("EM_EXPERT_CODE");
-		String emMobile = expertWaitingForCall.get("EM_MOBILE");
-		String emCallMSG = expertWaitingForCall.get("EM_CALL_MSG");
-		String playFilePath = VOICE_DIR + File.separator + objID + ".wav";
-		String emBillCode = expertWaitingForCall.get("EM_BILL_CODE");
-		String isCall = expertWaitingForCall.get("ISCALL");
-		String expertType=expertWaitingForCall.get("EM_EXPERT_TYPE_CODE");
-
-		int callNum=Integer.parseInt(isCall);
-		callNum+=1;
-		
-		if(!isSelecting(emBillCode)){
-			updateCallingStatus(CallServer.CALL_STATUS_PAUSE, null,emExpertCode, objID, emBillCode, callNum, 0,expertType);
-			return;
-		}
-		
-		
-		File f = new File(playFilePath);
-		if (!f.exists()) {			
-			boolean flag = tsf.ttsPlayToFile( playFilePath,emCallMSG);
-			if (!flag) {
-				logger.error("生成语音文件失败：" + playFilePath);
-				updateCallingStatus(CallServer.CALL_STATUS_MAKE_VOICE_FILE_FAIL, null,emExpertCode, objID, emBillCode, callNum, 0,expertType);
-				throw new EmCallException("呼叫退出，生成语音文件失败：" + playFilePath);
-			}
-		}		
-		
-//		logger.info("第" +  callNum + "次呼叫电话:"+ emMobile);		
-//		logger.info("线程"+threadNum+" 抽取单号==="+emBillCode+" objid===="+objID);
-		call(emMobile, playFilePath, emExpertCode, objID, emBillCode, callNum,expertType);	
-		}catch(EmCallException e){
-		  e.printStackTrace();
-		  logger.error(e.getMessage(), e);
-		}
+  		Map<String, String> expertWaitingForCall = ExpertUtil.getWaitingCallExpert();
+  		if (expertWaitingForCall == null || expertWaitingForCall.size() == 0) {
+  			return;
+  		}
+  		
+  		objID = expertWaitingForCall.get("OBJID");
+  		String emExpertCode = expertWaitingForCall.get("EM_EXPERT_CODE");
+  		String emMobile = expertWaitingForCall.get("EM_MOBILE");
+  		String emCallMSG = expertWaitingForCall.get("EM_CALL_MSG");
+  		String playFilePath = VOICE_DIR + File.separator + objID + ".wav";
+  		String emBillCode = expertWaitingForCall.get("EM_BILL_CODE");
+  		String isCall = expertWaitingForCall.get("ISCALL");
+  		String expertType=expertWaitingForCall.get("EM_EXPERT_TYPE_CODE");
+  
+  		int callNum=Integer.parseInt(isCall);
+  		callNum+=1;
+  		
+  		if(!isSelecting(emBillCode)){
+  			updateCallingStatus(CallServer.CALL_STATUS_PAUSE, null,emExpertCode, objID, emBillCode, callNum, 0,expertType,"pause");
+  			return;
+  		}
+  		
+  		
+  		File f = new File(playFilePath);
+  		if (!f.exists()) {			
+  			boolean flag = tsf.ttsPlayToFile( playFilePath,emCallMSG);
+  			if (!flag) {
+  			  String errorMsg="生成语音文件失败：" + playFilePath;
+  				logger.error(errorMsg);
+  				updateCallingStatus(CallServer.CALL_STATUS_MAKE_VOICE_FILE_FAIL, null,emExpertCode, objID, emBillCode, callNum, 0,expertType,errorMsg);
+  				throw new EmCallException("呼叫退出，生成语音文件失败：" + playFilePath);
+  			}
+  		}		
+  		
+  //		logger.info("第" +  callNum + "次呼叫电话:"+ emMobile);		
+  //		logger.info("线程"+threadNum+" 抽取单号==="+emBillCode+" objid===="+objID);
+  		if(haveSelectOneWithSameUnit(emExpertCode,emBillCode)){
+  		      String sql=CallServer.UPDATE_EM_CALL_SERVER_LIST_TO_OVER;
+  		      Object[] params = new Object[] {Integer.valueOf(-8),Integer.parseInt(objID)};
+  		      excuteSql(sql, params);
+  
+  		       sql="insert into EM_CALL_EXPERT_RECORD(em_bill_code,em_expert_code,call_num,call_time,call_state) values(?,?,?,sysdate,?)";
+  		       params = new Object[] { emBillCode, emExpertCode, isCall, Integer.valueOf(8)};
+  		       excuteSql(sql, params);
+  		      return;
+    		}else{
+    		  call(emMobile, playFilePath, emExpertCode, objID, emBillCode, callNum,expertType);	
+    		}
+  		}catch(EmCallException e){
+  		  e.printStackTrace();
+  		  logger.error(e.getMessage(), e);
+  		  throw e;
+  		}
 	}
-
-	/**
+/**
+ * 专家所在单位是否已经有专家被抽中
+ * @param emExpertCode
+ * @param emBillCode
+ * @return
+ */
+	private boolean haveSelectOneWithSameUnit(String emExpertCode, String emBillCode) {
+	  
+	  String sql="select c1.em_expert_code " +
+  " from zc_em_b_expert c1 " +
+  " where c1.em_expert_code=? and c1.em_unit_name in  " +
+  " (select distinct e.em_unit_name " +
+  " from zc_em_b_expert e, ZC_EM_EXPERT_EVALUATION b " +
+  " where e.em_expert_code = b.em_expert_code " +
+  " and b.em_response_status = '9'  " +
+  " and b.em_bill_code = ? " +
+  " and b.em_expert_code != ?)";
+	  
+	  Object[] params = new Object[] {emExpertCode,emBillCode,emExpertCode};
+	  
+	  try {
+      DAOFactory df=new DAOFactory();
+      List<Map<String, String>> rows=df.queryToListMap(sql, params); 
+      logger.debug(sql);
+      logger.debug(emExpertCode);
+      logger.debug(emBillCode);
+      logger.debug(emExpertCode);
+      
+      if(rows!=null && rows.size()>0){
+        logger.debug("rows.size()="+rows.size());
+        return true;
+      }
+    } catch (EmCallException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+      logger.error(e.getMessage(), e);
+    }
+    return false;
+  }
+  /**
 	 * 当前单据是否处于抽取状态
 	 * @param emBillCode
 	 * @return
@@ -387,6 +483,7 @@ public class CallServer extends Thread {
 		int rlt = SSMFactory.ssmGet1stDtmfClr(ch, pointer);
 		if (rlt == 1) {
 			key = pointer.getAsString();
+			logger.debug("get the key:"+key);
 			pointer.dispose();
 		} else if (rlt == -1) {
 			logger.info("获取按键错误。" + getLastErrMsg());
@@ -414,9 +511,10 @@ public class CallServer extends Thread {
 		int record = 0;
 		int rlt = -2;
 		int ch = -1;
+		String errorMsg="";
 		try {
 			// 开始打电话
-			updateCallingStatus(CallServer.CALL_STATUS_BEGIN, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+			updateCallingStatus(CallServer.CALL_STATUS_BEGIN, key,emExpertCode, objId, emBillCode, isCall, record,expertType,null);
 			// 获取空闲通道
 			int timmer = 0;
 			while (ch == -1 && timmer < 10000) {
@@ -426,37 +524,42 @@ public class CallServer extends Thread {
 				timmer += 10;
 			}
 			if (ch == -1) {
-				logger.error("获取空闲通道失败。" + getLastErrMsg());
-				updateCallingStatus(CallServer.YUYIN_TONGDAO_YICHANG, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+			  errorMsg="获取空闲通道失败。" + getLastErrMsg();
+				logger.error(errorMsg);
+				updateCallingStatus(CallServer.YUYIN_TONGDAO_YICHANG, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}			
 
 			rlt = SSMFactory.ssmSetHangupStopPlayFlag(ch, 1);
 			if (rlt == -1) {
-				logger.error("设置参数失败。" + getLastErrMsg());
-				updateCallingStatus(CallServer.YUYIN_TONGDAO_YICHANG, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+        errorMsg="设置放音任务是否因驱动程序状态机检测到对端挂机而终止失败。" + getLastErrMsg();
+				logger.error(errorMsg);
+				updateCallingStatus(CallServer.YUYIN_TONGDAO_YICHANG, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
 			rlt = SSMFactory.SsmSetDtmfStopPlay(ch, true);
 			if (rlt == -1) {
-				logger.error("设置参数失败。" + getLastErrMsg());
-				updateCallingStatus(CallServer.YUYIN_TONGDAO_YICHANG, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+        errorMsg="设置放音任务是否因DTMF检测器检测到DTMF字符而终止失败。" + getLastErrMsg();
+				logger.error(errorMsg);
+				updateCallingStatus(CallServer.CALL_STATUS_FAIL, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
 			// 摘机
 			rlt = SSMFactory.ssmPickup(ch);
 			if (rlt == -1) {
-				logger.error("摘机失败。" + getLastErrMsg());
+        errorMsg="在通道上执行摘机操作失败。" + getLastErrMsg();
+				logger.error(errorMsg);
 				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.YUYIN_TONGDAO_YICHANG, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_FAIL, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
 			// 呼叫
 			rlt = SSMFactory.ssmAutoDial(ch, emMobile);
 			if (rlt == -1) {
-				logger.error("呼叫失败。" + getLastErrMsg());
+			  errorMsg="向驱动程序提交AutoDial任务，发起一次去话呼叫失败。" + getLastErrMsg();
+				logger.error(errorMsg);
 				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.CALL_STATUS_FAIL, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_FAIL, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
 			// 被叫摘机
@@ -470,26 +573,79 @@ public class CallServer extends Thread {
 			}
 			SSMFactory.ssmClearAMDResult(ch);
 			//如果在30秒的时间内没有拨通电话，认为呼叫失败					
-			if (chkAuto == -1 || timmer == 30000 || chkAuto == 12) {
-				logger.error("专家(编号:"+emExpertCode+")电话号码为空号，请核对专家库中的专家电话号码！chkAuto="+chkAuto+",timmer="+timmer);
+			if (chkAuto == -1 || timmer == 30000) {
+			  errorMsg="专家(编号:"+emExpertCode+")无法拨通，chkAuto="+chkAuto+",timmer="+timmer;
+				logger.error(errorMsg);
 				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.CALL_STATUS_NULL_PHONE_NUMBER, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
+      //如果在30秒的时间内没有拨通电话，认为呼叫失败         
+      if (chkAuto == 3) {
+        errorMsg="语音卡线路没有检测到信号，请检查电话线插入口是否正确！chkAuto="+chkAuto;
+        logger.error(errorMsg);
+        SSMFactory.ssmHangup(ch);
+        updateCallingStatus(CallServer.CALL_STATUS_NO_SIGNAL, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+        return;
+      }
 			if (chkAuto == 4) {
-				logger.info("对方用户忙！");
+			  errorMsg="对方用户忙！chkAuto="+chkAuto;
+				logger.info(errorMsg);
 				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.CALL_STATUS_BUSY, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_BUSY, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
-			if (chkAuto != 7) {
-				logger.info("被叫未摘机。");
+			if(chkAuto==5){ 
+			  errorMsg="拨号完成后，线路上先是出现了回铃音，然后保持静默,无法通话，结束！chkAuto="+chkAuto;
+      logger.info(errorMsg);
+      SSMFactory.ssmHangup(ch);
+      updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+      return;			  
+			}
+      if(chkAuto==6){ 
+        errorMsg="拨号完成后，线路上没有检测到回铃音，一直保持静默,无法通话，结束！chkAuto="+chkAuto;
+      logger.info(errorMsg);
+      SSMFactory.ssmHangup(ch);
+      updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+      return;       
+      }
+      if(chkAuto==10){ 
+        errorMsg="被叫用户在指定时间内没有摘机，AutoDial失败，结束！chkAuto="+chkAuto;
+      logger.info(errorMsg);
+      SSMFactory.ssmHangup(ch);
+      updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+      return;       
+      }
+      if(chkAuto==11){ 
+        errorMsg="AutoDial任务失败，结束！chkAuto="+chkAuto;
+      logger.info(errorMsg);
+      SSMFactory.ssmHangup(ch);
+      updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+      return;       
+      }
+      if(chkAuto==12){ 
+        errorMsg="被叫用户号码为空号，AutoDial任务失败，结束！chkAuto="+chkAuto;
+      logger.info(errorMsg);
+      SSMFactory.ssmHangup(ch);
+      updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+      return;       
+      }
+      if(chkAuto==13 || chkAuto==14){ 
+        errorMsg="IP卡SIP通道收到消息，结束！chkAuto="+chkAuto;
+      logger.info(errorMsg);
+      SSMFactory.ssmHangup(ch);
+      updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+      return;       
+      }
+			if (chkAuto != 7 && chkAuto!=8 && chkAuto!=9) {
+			  errorMsg="呼叫异常，返回结果为:"+chkAuto;
+				logger.info(errorMsg);
 				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
 			//开始通话
-			updateCallingStatus(CallServer.CALL_STATUS_BEGIN_TALKING, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+			updateCallingStatus(CallServer.CALL_STATUS_BEGIN_TALKING, key,emExpertCode, objId, emBillCode, isCall, record,expertType,null);
 
 			// 播放单个文件，启动文件播放任务
 			sleep(2000);//等待两秒开始放音
@@ -499,7 +655,7 @@ public class CallServer extends Thread {
 			//获取放音是否结束以及放音过程中的按键信息
 			String kk=getKeyByCalling(ch);
 			if(kk.equals(CallServer.CALL_STATUS_HUANG_UP)){
-				updateCallingStatus(CallServer.CALL_STATUS_HUANG_UP, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_HUANG_UP, key,emExpertCode, objId, emBillCode, isCall, record,expertType,null);
 				key = CallServer.CALL_STATUS_HUANG_UP;
 			}else if(kk.equals(CallServer.AGREE)||kk.equals(CallServer.DECLINE)||kk.equals(CallServer.PLAY_AGAIN)){
 				key=kk;
@@ -508,9 +664,10 @@ public class CallServer extends Thread {
 			// 清空按键缓冲区
 			rlt = SSMFactory.ssmClearRxDtmfBuf(ch);
 			if (rlt == -1) {
-				logger.error("清空按键缓冲区失败。" + getLastErrMsg());
+			  errorMsg="清空按键缓冲区失败。" + getLastErrMsg();
+				logger.error(errorMsg);
 				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.CALL_STATUS_SYS_ERROR, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_SYS_ERROR, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 				return;
 			}
 			timmer = 0;
@@ -521,7 +678,7 @@ public class CallServer extends Thread {
 					playVoiceFile(ch, playFilePath);	
 					kk=getKeyByCalling(ch);
 					if(kk.equals(CallServer.CALL_STATUS_HUANG_UP)){
-						updateCallingStatus(CallServer.CALL_STATUS_HUANG_UP, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+						updateCallingStatus(CallServer.CALL_STATUS_HUANG_UP, key,emExpertCode, objId, emBillCode, isCall, record,expertType,null);
 					}else if(kk.equals(CallServer.AGREE)||kk.equals(CallServer.DECLINE)||kk.equals(CallServer.PLAY_AGAIN)){
 						key=kk;
 					}
@@ -552,9 +709,10 @@ public class CallServer extends Thread {
 				// 清空按键缓冲区
 				rlt = SSMFactory.ssmClearRxDtmfBuf(ch);
 				if (rlt == -1) {
-					logger.error("清空按键缓冲区失败。" + getLastErrMsg());
+				  errorMsg="清空按键缓冲区失败。" + getLastErrMsg();
+					logger.error(errorMsg);
 					//SSMFactory.ssmHangup(ch);
-					updateCallingStatus(CallServer.CALL_STATUS_SYS_ERROR, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+					updateCallingStatus(CallServer.CALL_STATUS_SYS_ERROR, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
 					return;
 				}
 				Thread.sleep(200);
@@ -567,14 +725,16 @@ public class CallServer extends Thread {
 			}
 			
 			if(key.equals(CallServer.AGREE)){
-				updateCallingStatus(CallServer.AGREE,key, emExpertCode, objId, emBillCode, isCall,record,expertType);
+        logger.error("同意。key=" + CallServer.AGREE);
+				updateCallingStatus(CallServer.AGREE,key, emExpertCode, objId, emBillCode, isCall,record,expertType,null);
 			}else if(key.equals(CallServer.DECLINE)){
-				updateCallingStatus(CallServer.DECLINE,key, emExpertCode, objId, emBillCode, isCall,record,expertType);
+        logger.error("拒绝。key=" + CallServer.DECLINE);
+				updateCallingStatus(CallServer.DECLINE,key, emExpertCode, objId, emBillCode, isCall,record,expertType,null);
 			}else{
-				updateCallingStatus(CallServer.CALL_STATUS_END,key, emExpertCode, objId, emBillCode, isCall,record,expertType);
+				updateCallingStatus(CallServer.CALL_STATUS_END,key, emExpertCode, objId, emBillCode, isCall,record,expertType,null);
 			}			
 		} catch (Exception e) {		  
-      updateCallingStatus(CallServer.CALL_STATUS_SYS_ERROR, key,emExpertCode, objId, emBillCode, isCall, record,expertType);
+      updateCallingStatus(CallServer.CALL_STATUS_SYS_ERROR, key,emExpertCode, objId, emBillCode, isCall, record,expertType,null);
 			try {
         SSMFactory.ssmStopPlay(ch);
         SSMFactory.ssmHangup(ch);
@@ -610,7 +770,7 @@ public class CallServer extends Thread {
 			}
 
 			key = getKeyStr(ch);			
-			
+			logger.debug("=====================key="+key);
 			if (key.equals(PLAY_AGAIN) || key.equals(AGREE)
 					|| key.equals(DECLINE)) {
 				// SSMFactory.ssmHangup(ch);
@@ -619,7 +779,8 @@ public class CallServer extends Thread {
 			}
 			
 			rlt = SSMFactory.ssmCheckPlay(ch);
-			
+
+			logger.debug("=====================rlt="+rlt);
 			if(rlt==4){//放音时对方挂机了
 				rlt=1;
 				key=CALL_STATUS_HUANG_UP;
@@ -627,8 +788,8 @@ public class CallServer extends Thread {
 			
 			
 			SSMFactory.ssmClearRxDtmfBuf(ch);
-			//每隔0.3秒检查一次通话状态
-			Thread.sleep(300);
+			//每隔1秒检查一次通话状态
+			Thread.sleep(1000);
 		}
 		if(key.equals("")){
 			key=CALL_STATUS_VOICE_FILE_END;
@@ -670,9 +831,10 @@ public class CallServer extends Thread {
 	 *            抽取单据号
 	 * @param isCall
 	 * @param record
+	 * @param errorMsg 
 	 * @throws Exception
 	 */
-	void updateCallingStatus(String callStatus, String key,String emExpertCode, String objId, String emBillCode,int isCall, int record,String expertType) {
+	void updateCallingStatus(String callStatus, String key,String emExpertCode, String objId, String emBillCode,int isCall, int record,String expertType, String errorMsg) {
 //		List<String> sqlList = new ArrayList<String>();
 //		List<Object[]> paramList = new ArrayList<Object[]>();
 		if(callStatus.equals(CallServer.CALL_STATUS_BEGIN)){//开始呼叫		
@@ -706,7 +868,7 @@ public class CallServer extends Thread {
 			
 			sql=CallServer.UPDATE_EM_CALL_EXPERT_RECORD;
 //			params = new Object[] { CallServer.CALL_STATUS_NULL_PHONE_NUMBER,emBillCode, emExpertCode, isCall};
-      params = new Object[] { CallServer.CALL_STATUS_NO_RESPONSE,emBillCode, emExpertCode, isCall};
+      params = new Object[] { CallServer.CALL_STATUS_NULL_PHONE_NUMBER,emBillCode, emExpertCode, isCall};
 //			sqlList.add(sql);
 //			paramList.add(params);
       excuteSql(sql, params);		
@@ -855,6 +1017,12 @@ public class CallServer extends Thread {
     try {
       DAOFactory df=new DAOFactory();
       df.executeUpdate(sql, params);
+      logger.debug(sql);
+      if(params!=null){
+        for(int i=0;i<params.length;i++){
+          logger.debug(params[i]);
+        }
+      }
     } catch (EmCallException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -875,6 +1043,12 @@ public class CallServer extends Thread {
 				Object[] params = paramList.get(i);
 	      DAOFactory df=new DAOFactory();
 				df.executeUpdate(sql, params);
+	      logger.debug(sql);
+	      if(params!=null){
+	        for(int j=0;j<params.length;j++){
+	          logger.debug(params[j]);
+	        }
+	      }
 			} 
 	}
 }

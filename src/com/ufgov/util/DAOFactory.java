@@ -206,6 +206,7 @@ public class DAOFactory {
     Connection conn = null;
     PreparedStatement stmt = null;
     ResultSet rs = null;
+    List<Map<String, String>> rtn=new ArrayList<Map<String,String>>();
     try {
       conn = getConnection();
       stmt = conn.prepareStatement(sql);
@@ -213,7 +214,7 @@ public class DAOFactory {
         setStatementParameters(stmt, params);
       }
       rs = stmt.executeQuery();
-      return getResultList(rs);
+      rtn= getResultList(rs);
     } catch (SQLException e) {
       StringBuffer sb = new StringBuffer();
       sb.append("≤È—Ø“Ï≥£.\n");
@@ -237,6 +238,7 @@ public class DAOFactory {
     } finally {
       closeConnection(conn, stmt, rs);
     }
+    return rtn;
   }
 
   public  Map<String, String> queryToColumnMap(String sql, Object[] params) throws EmCallException {

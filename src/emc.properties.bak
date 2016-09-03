@@ -6,8 +6,8 @@ shConfig = C:/ShCti/ShConfig.ini
 shIndex = C:/ShCti/ShIndex.ini
 #扫描间隔时间
 splitTime=3000
-#扫描次数，呼叫专家的次数，默认是给专家打3次电话
-callNum=3
+#扫描次数，呼叫专家的次数，默认是给专家打1次电话
+callNum=1
 #默认生成的语言文件内容
 agreeText=您已接受邀请,感谢您的参与，再见。
 declineText=您已谢绝邀请，打扰之处请见谅，再见。
@@ -20,8 +20,18 @@ channel=2
 #坐席线程总数
 ringThread=1
 #数据库配置信息
-hostname=localhost
+hostname=192.168.1.200
 port=1521
 sid=ORCL
-username=yangzhong2
-password=1
+username=yzzfcg
+password=yzzfcg
+#当多台电话语音卡连接同一个库，分别代表代理机构/财政局/采购中心进行电话拨打，使用对应单位的编码;
+#默认,只有一个语音卡是使用这个
+phonecard=*
+#财政局
+#phonecard=000
+#金居工程
+#phonecard=920001
+#采购中心
+#phonecard=040009
+

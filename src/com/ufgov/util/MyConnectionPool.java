@@ -173,15 +173,29 @@ public class MyConnectionPool {
   private Connection newConnection() throws SQLException {     
   
       // 创建一个数据库连接     
-  
+
+    try{
+      Driver driver = (Driver) (Class.forName("oracle.jdbc.driver.OracleDriver").newInstance());  
+      DriverManager.registerDriver(driver); // 注册 JDBC 驱动程序   
+    }catch (ClassNotFoundException e) {
+      // TODO: handle exception
+      throw new SQLException("无法获取驱动！",e);
+    } catch (InstantiationException e) {
+      // TODO Auto-generated catch block
+      throw new SQLException("无法获取驱动！",e);
+    } catch (IllegalAccessException e) {
+      // TODO Auto-generated catch block
+      throw new SQLException("无法获取驱动！",e);
+    }
       Connection conn = DriverManager.getConnection(URI, USER_NAME, PASSWORD);     
   
+      return conn;
       // 如果这是第一次创建数据库连接，即检查数据库，获得此数据库允许支持的     
   
       // 最大客户连接数目     
   
       // connections.size()==0 表示目前没有连接己被创建     
-  
+  /*
       if (connections.size() == 0) {     
   
           DatabaseMetaData metaData = conn.getMetaData();     
@@ -208,7 +222,7 @@ public class MyConnectionPool {
       }     
   
       return conn; // 返回创建的新的数据库连接     
-  
+*/  
   }     
   
   /**   
@@ -222,8 +236,11 @@ public class MyConnectionPool {
    */    
   
   public synchronized Connection getConnection() throws SQLException {     
-  
-      // 确保连接池己被创建     
+    
+    //出现游标数超出，改为每次创建新连接
+    return newConnection();
+    //原来代码
+    /*  // 确保连接池己被创建     
   
       if (connections == null) {     
 
@@ -258,7 +275,7 @@ public class MyConnectionPool {
       }     
   
       return conn;// 返回获得的可用的连接     
-  
+*/  
   }     
   
   /**   
@@ -443,7 +460,16 @@ public class MyConnectionPool {
   public void returnConnection(Connection conn) {     
   
       if(conn==null)return;
+      try {
+        conn.close();
+      } catch (SQLException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+        logger.error("关闭数据库连接异常\n"+e.getMessage(),e);     
+      }
       
+      //原来的代码不用了，出现游标超出的情况，直接关闭连接
+     /* 
       // 确保连接池存在，如果连接没有创建（不存在），直接返回     
       if (connections == null) {     
   
@@ -481,7 +507,7 @@ public class MyConnectionPool {
   
           }     
   
-      }     
+      }   */  
   
   }     
   

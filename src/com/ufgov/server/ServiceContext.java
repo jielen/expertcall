@@ -18,6 +18,13 @@ public class ServiceContext {
 
   public static List<CallServer> callServerList = new ArrayList<CallServer>();
   
+//当多台电话语音卡连接同一个库，分别代表代理机构/财政局/采购中心进行电话拨打，使用对应单位的编码;
+//  /默认,只有一个语音卡是使用这个
+  public static final String phonecard_defualt="*";
+  
+  //系统初始化时，会从emc.properties获取
+  public static String phonecard="*";
+  
   public static void main(String[] args) {
 	 
     ServiceContext serviceContext = new ServiceContext();
@@ -27,7 +34,7 @@ public class ServiceContext {
     
     //外拨电话线数量
 	final int linesNum = Integer.parseInt(ApplicationContext.singleton().getValueAsString("callThread"));
-	
+	 
 	Thread th = new Thread() {
 		public void run() {
 			TTSFactory tsf = new TTSFactory();
@@ -48,11 +55,15 @@ public class ServiceContext {
 			}  
 		}
 	};
-	th.start();
+	th.start(); 
   }
 
   public void init() {
     try {
+      phonecard=ApplicationContext.singleton().getValueAsString("phonecard");
+      if(phonecard==null || phonecard.trim().length()==0){
+        phonecard=phonecard_defualt;
+      }
       initSsmCard();
     } catch (Exception e) {
       logger.info("语音卡初始化失败。" + e.getMessage());
@@ -108,5 +119,26 @@ public class ServiceContext {
     String errMeg = pointer.getAsString();
     pointer.dispose();
     return errMeg;
+  }
+  
+  /**
+   * 是否多部有语音卡连接一个库
+   * @return
+   */
+  public static boolean isMutilPhoneCard(){
+    if(phonecard_defualt.equals(phonecard)){
+      return false;
+    }
+    return true;
+  }
+  /**
+   * 是否财政局
+   * @return
+   */
+  public static boolean isCZ(){
+    if(phonecard_defualt.equals(phonecard) || "000".equals(phonecard)){
+      return true;
+    }
+    return false;
   }
 }

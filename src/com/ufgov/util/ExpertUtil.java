@@ -5,11 +5,13 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Hashtable;
+
 
 import org.apache.log4j.Logger;
-
-import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
+ 
 import com.ufgov.server.CallServer;
+import com.ufgov.server.ServiceContext;
 
 public class ExpertUtil {
   
@@ -35,11 +37,35 @@ public class ExpertUtil {
     Map<String, String> expertInfo=new HashMap<String, String>();
     if(waitingCallExpertList==null || waitingCallExpertList.size()==0){
     	Object[] params = new Object[] { CallServer.CALL_NUM, 0,CallServer.CALL_NUM};
+      Object[] params2 = new Object[] {ServiceContext.phonecard,CallServer.CALL_NUM, 0,CallServer.CALL_NUM};
       DAOFactory df=new DAOFactory();
-        waitingCallExpertList = df.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST, params);  
-        logger.info("++++++获取等待打电话的专家");
-        logger.info("++++++"+CallServer.GET_EM_CALL_SERVER_LIST);
-        logger.info("++++++"+CallServer.CALL_NUM+",0,"+CallServer.CALL_NUM);
+
+      if(ServiceContext.isMutilPhoneCard()){
+        if(ServiceContext.isCZ()){
+          waitingCallExpertList = df.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST2_for_cz, params2);  
+          logger.debug("获取等待打电话的专家");
+          logger.debug(CallServer.GET_EM_CALL_SERVER_LIST2_for_cz);
+          logger.debug(ServiceContext.phonecard+","+CallServer.CALL_NUM+",0,"+CallServer.CALL_NUM);            
+        }else{
+          waitingCallExpertList = df.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST2, params2);  
+          logger.debug("获取等待打电话的专家");
+          logger.debug(CallServer.GET_EM_CALL_SERVER_LIST2);
+          logger.debug(ServiceContext.phonecard+","+CallServer.CALL_NUM+",0,"+CallServer.CALL_NUM);  
+        }
+      }else{
+        if(ServiceContext.isCZ()){
+          waitingCallExpertList = df.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST_for_cz, params);  
+          logger.debug("获取等待打电话的专家");
+          logger.debug(CallServer.GET_EM_CALL_SERVER_LIST_for_cz);
+          logger.debug(CallServer.CALL_NUM+",0,"+CallServer.CALL_NUM);            
+        }else{
+          waitingCallExpertList = df.queryToListMap(CallServer.GET_EM_CALL_SERVER_LIST, params);  
+          logger.debug("获取等待打电话的专家");
+          logger.debug(CallServer.GET_EM_CALL_SERVER_LIST);
+          logger.debug(CallServer.CALL_NUM+",0,"+CallServer.CALL_NUM);  
+        }
+        
+      }
     }
     
     if (waitingCallExpertList ==null || waitingCallExpertList.size() ==0)
