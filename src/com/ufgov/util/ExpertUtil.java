@@ -36,7 +36,8 @@ public class ExpertUtil {
   public static synchronized Map<String, String>  getWaitingCallExpert() throws EmCallException {
     Map<String, String> expertInfo=new HashMap<String, String>();
     if(waitingCallExpertList==null || waitingCallExpertList.size()==0){
-    	Object[] params = new Object[] { CallServer.CALL_NUM, 0,CallServer.CALL_NUM};
+//    	Object[] params = new Object[] { CallServer.CALL_NUM, 0,CallServer.CALL_NUM};
+      Object[] params = new Object[] { CallServer.CALL_NUM, 0};
       Object[] params2 = new Object[] {ServiceContext.phonecard,CallServer.CALL_NUM, 0,CallServer.CALL_NUM};
       DAOFactory df=new DAOFactory();
 

@@ -26,7 +26,7 @@ public class CallServer extends Thread {
 	private static Logger logger = Logger.getLogger(CallServer.class);
 
 	//获取等待拨打电话的专家，不包括同意或者拒绝的专家，财政局还是用这种代码
-	 public static final String GET_EM_CALL_SERVER_LIST_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+	/* public static final String GET_EM_CALL_SERVER_LIST_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
 			" and c.em_expert_code not in("+
        " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
        " union "+
@@ -35,9 +35,11 @@ public class CallServer extends Thread {
      " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
          " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
          " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
-      " )  ";
+      " )  ";*/
+	 public static final String GET_EM_CALL_SERVER_LIST_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " ;
+    
       //获取等待拨打电话的专家，不包括同意或者拒绝的专家，财政局还是用这种代码,支持多电话卡抽取
-      public static final String GET_EM_CALL_SERVER_LIST2_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+     /* public static final String GET_EM_CALL_SERVER_LIST2_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
       " and c.em_expert_code not in("+
        " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
        " union "+
@@ -46,10 +48,11 @@ public class CallServer extends Thread {
      " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
          " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
          " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
-      " )  ";
-   
+      " )  ";*/
+	 public static final String GET_EM_CALL_SERVER_LIST2_for_cz = "SELECT C.* FROM EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " ;
+    
 	//代理机构改成用视图获取专家电话信息，这样可以不同的时候，调整这个视图的电话号码，如前面加9等,财政局还是用上面的代码
-	public static final String GET_EM_CALL_SERVER_LIST = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+	/*public static final String GET_EM_CALL_SERVER_LIST = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
     " and c.em_expert_code not in("+
      " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
      " union "+
@@ -58,9 +61,11 @@ public class CallServer extends Thread {
      " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
          " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
          " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
-      " )  ";
+      " )  ";*/
+	 public static final String GET_EM_CALL_SERVER_LIST = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " ;
+	    
 //代理机构改成用视图获取专家电话信息，这样可以不同的时候，调整这个视图的电话号码，如前面加9等,财政局还是用上面的代码, 支持多电话卡抽取
-  public static final String GET_EM_CALL_SERVER_LIST2 = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
+ /* public static final String GET_EM_CALL_SERVER_LIST2 = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " +
     " and c.em_expert_code not in("+
      " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e where e.em_bill_code = b.em_bill_code "+//同意参加的不再拨打电话
      " union "+
@@ -69,7 +74,9 @@ public class CallServer extends Thread {
      " select e.em_expert_code from ZC_EM_EXPERT_EVALUATION e,ZC_EM_EXPERT_PRO_BILL pb "+
          " where e.em_bill_code=pb.em_bill_code and e.em_bill_code != b.em_bill_code and e.em_response_status='9' and e.em_expert_code=c.em_expert_code "+
          " and TRUNC(b.em_tenders_time)-TRUNC(pb.em_tenders_time)=0 " +//同一天的其他项目
-      " )  ";
+      " )  ";*/
+	 public static final String GET_EM_CALL_SERVER_LIST2 = "SELECT C.* FROM V_EM_CALL_SERVER_LIST C, ZC_EM_EXPERT_PRO_BILL B WHERE C.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_CO_CODE=?  AND B.EM_BILL_STATUS = 'SELECTING' AND C.ISCALL < ? AND C.ISCALL >= ? " ;
+	    
 
 	//private static final String GET_EM_CALL_EXPERT_NUM = "SELECT NVL(MAX(D.CALL_NUM),0) AS CALL_NUM,CALL_STATE FROM EM_CALL_EXPERT_RECORD D WHERE D.EM_BILL_CODE =? AND D.EM_EXPERT_CODE =?";
 	
@@ -201,6 +208,11 @@ public class CallServer extends Thread {
 	private  String objID="";
 	
 	private  int threadNum =0; 
+	
+	private int waitTime=5000;//出现拨不出去时,等候5秒再拨,如果拨够6次,就停止拨打
+	
+	private int waitTimes=6;
+	
 
 	/**
 	 * 唯一标识
@@ -361,6 +373,14 @@ public class CallServer extends Thread {
   			return;
   		}
   		
+  		if(agree(emBillCode,emExpertCode)){
+  		  logger.info("专家"+emExpertCode+"已经被邀请，不再拨打电话.");
+  		  updateCallingStatus(CallServer.CALL_STATUS_NO_RESPONSE, null,emExpertCode, objID, emBillCode, callNum, 0,expertType,"已经被邀请，不再拨打电话.");
+  		  return;
+  		}
+  		
+  		
+  		
   		
   		File f = new File(playFilePath);
   		if (!f.exists()) {			
@@ -393,6 +413,44 @@ public class CallServer extends Thread {
   		  throw e;
   		}
 	}
+	/**
+	 * 是否已经被邀请，不再拨打电话.
+	 * @param emBillCode
+	 * @param emExpertCode
+	 * @return
+	 */
+private boolean agree(String emBillCode, String emExpertCode) {
+  String sql="select e.*"
+                 +"  from ZC_EM_EXPERT_EVALUATION e,"
+                        +"  ZC_EM_EXPERT_PRO_BILL   b,"
+                        +"  ZC_EM_EXPERT_PRO_BILL   b2"
+                  +"  where e.em_response_status = '9'"
+                    +"  and e.em_bill_code = b.em_bill_code"
+                    +"  and e.em_bill_code != b2.em_bill_code"
+                    +"  and e.em_expert_code = ?"
+                    +"  and b2.em_bill_code=?"
+                    +"  and TRUNC(b.em_tenders_time) -TRUNC(b2.em_tenders_time) = 0";
+  Object[] params = new Object[] {emExpertCode,emBillCode};
+  try {
+    DAOFactory df=new DAOFactory();
+    List<Map<String, String>> rows=df.queryToListMap(sql, params); 
+    logger.debug("查看专家是否被同一天的项目邀请了");
+    logger.debug(sql);
+    logger.debug(emExpertCode);
+    logger.debug(emBillCode); 
+    
+    if(rows!=null && rows.size()>0){
+      logger.debug("已被邀请了");
+      return true;
+    }
+  } catch (EmCallException e) {
+    // TODO Auto-generated catch block
+    e.printStackTrace();
+    logger.error(e.getMessage(), e);
+  }
+  logger.debug("没有被邀请");
+  return false;
+  }
 /**
  * 专家所在单位是否已经有专家被抽中
  * @param emExpertCode
@@ -554,14 +612,27 @@ public class CallServer extends Thread {
 				return;
 			}
 			// 呼叫
-			rlt = SSMFactory.ssmAutoDial(ch, emMobile);
-			if (rlt == -1) {
-			  errorMsg="向驱动程序提交AutoDial任务，发起一次去话呼叫失败。" + getLastErrMsg();
-				logger.error(errorMsg);
-				SSMFactory.ssmHangup(ch);
-				updateCallingStatus(CallServer.CALL_STATUS_FAIL, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
-				return;
-			}
+
+      timmer = 0;
+      rlt=-1;
+      while(timmer<30000 && rlt==-1){
+        
+  			rlt = SSMFactory.ssmAutoDial(ch, emMobile);  			
+
+  			if(rlt==-1){
+          Thread.sleep(5000);
+          timmer += 5000;  		
+          errorMsg="向驱动程序提交AutoDial任务，发起一次去话呼叫失败。等待5秒";
+          logger.error(errorMsg);	  
+  			} 
+      }
+      if (rlt == -1) {
+        errorMsg="向驱动程序提交AutoDial任务，发起一次去话呼叫失败。" + getLastErrMsg();
+        logger.error(errorMsg);
+        SSMFactory.ssmHangup(ch);
+        updateCallingStatus(CallServer.CALL_STATUS_FAIL, key,emExpertCode, objId, emBillCode, isCall, record,expertType,errorMsg);
+        return;
+      }
 			// 被叫摘机
 			timmer = 0;
 			int chkAuto = -2;
@@ -858,6 +929,12 @@ public class CallServer extends Thread {
 //			sqlList.add(sql);
 //			paramList.add(params);
       excuteSql(sql, params);
+      
+      sql=CallServer.UPDATE_EM_CALL_SERVER_LIST_TO_OVER;
+      params = new Object[] {Integer.valueOf(-1),Integer.parseInt(objId)};
+//      sqlList.add(sql);
+//      paramList.add(params);
+      excuteSql(sql, params);
 			
 		}else if(callStatus.equals(CallServer.CALL_STATUS_NULL_PHONE_NUMBER)){//空号
 			String sql=CallServer.UPDATE_EM_CALL_SERVER_LIST_TO_OVER;
@@ -903,11 +980,22 @@ public class CallServer extends Thread {
 //			sqlList.add(sql);
 //			paramList.add(params);
       excuteSql(sql, params);
+      sql=CallServer.UPDATE_EM_CALL_SERVER_LIST_TO_OVER;
+      params = new Object[] {Integer.valueOf(-1),Integer.parseInt(objId)};
+//      sqlList.add(sql);
+//      paramList.add(params);
+      excuteSql(sql, params);
 		}else if(callStatus.equals(CallServer.CALL_STATUS_FAIL)){//呼叫失败
 			String sql=CallServer.UPDATE_EM_CALL_EXPERT_RECORD;
 			Object[] params = new Object[] { CallServer.CALL_STATUS_FAIL,emBillCode, emExpertCode, isCall};
 //			sqlList.add(sql);
 //			paramList.add(params);
+      excuteSql(sql, params);
+      
+      sql=CallServer.UPDATE_EM_CALL_SERVER_LIST_TO_OVER;
+      params = new Object[] {Integer.valueOf(-1),Integer.parseInt(objId)};
+//      sqlList.add(sql);
+//      paramList.add(params);
       excuteSql(sql, params);
 		}else if(callStatus.equals(CallServer.AGREE)){// 专家参加评审
 			String sql=CallServer.INSERT_EM_EXPERT_EVALUATION;

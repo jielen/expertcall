@@ -48,12 +48,38 @@ public class BillServer extends Thread {
 
   // 获取当前单据上对应类别的专家，已经打过电话的、过滤的专家不在选择范围内 专家列表 em_type_code like 'xxxx%'
   // 支持选取大类抽取
-  private static final String GET_EXPERT_LIST = "SELECT * FROM ( SELECT * FROM ZC_EM_B_EXPERT WHERE EM_EXPERT_CODE NOT IN (SELECT EM_EXPERT_CODE  FROM EM_EXPERT_BILL_FILTER WHERE EM_BILL_CODE = ?) "
+ /* private static final String GET_EXPERT_LIST = "SELECT * FROM ( SELECT * FROM ZC_EM_B_EXPERT WHERE EM_EXPERT_CODE NOT IN (SELECT EM_EXPERT_CODE  FROM EM_EXPERT_BILL_FILTER WHERE EM_BILL_CODE = ?) "
     + "AND (EM_UNIT_NAME is null or EM_UNIT_NAME NOT IN (SELECT UNIT_NAME FROM EM_EXPERT_BILL_FILTER_UNIT WHERE EM_BILL_CODE =?) )"
     + "AND EM_EXPERT_CODE NOT IN (SELECT EM_EXPERT_CODE  FROM ZC_EM_EXPERT_EVALUATION  WHERE EM_BILL_CODE = ?) "
     + "AND EM_EXPERT_CODE NOT IN (SELECT L.EM_EXPERT_CODE FROM EM_CALL_SERVER_LIST L  WHERE L.EM_BILL_CODE=? AND L.EM_EXPERT_TYPE_CODE=?) "
     + "AND EM_EXPERT_CODE IN (SELECT EM_EXPERT_CODE FROM ZC_Em_Expert_Type_Join WHERE em_type_code like ?||'%') AND EM_EXP_STATUS='enable' ORDER BY dbms_random.VALUE ) WHERE rownum < 100";
-
+*/
+  private static final String GET_EXPERT_LIST = "SELECT * FROM ("
+        +" SELECT * FROM ZC_EM_B_EXPERT    WHERE EM_EXPERT_CODE NOT IN"
+            +" (SELECT EM_EXPERT_CODE FROM EM_EXPERT_BILL_FILTER WHERE EM_BILL_CODE = ?"
+              +" union "
+              +" SELECT EM_EXPERT_CODE  FROM ZC_EM_EXPERT_EVALUATION  WHERE EM_BILL_CODE = ?"
+              +" union"
+              +" SELECT L.EM_EXPERT_CODE  FROM EM_CALL_SERVER_LIST L  WHERE L.EM_BILL_CODE = ?"
+           //     +" AND L.EM_EXPERT_TYPE_CODE = ?"
+            /*  +" union"
+              +" SELECT L.EM_EXPERT_CODE FROM EM_CALL_SERVER_LIST L"
+                 +" WHERE L.EM_BILL_CODE != ? and l.iscall='0'"*/
+              +" union "
+              +" select e.em_expert_code"
+                +" from ZC_EM_EXPERT_EVALUATION e, ZC_EM_EXPERT_PRO_BILL pb,ZC_EM_EXPERT_PRO_BILL b"
+                +" where e.em_bill_code = pb.em_bill_code  and e.em_response_status = '9'"
+                +" and e.em_bill_code !=  b.em_bill_code  and b.em_bill_code=? "
+                +" and TRUNC(b.em_tenders_time) - TRUNC(pb.em_tenders_time) = 0  "
+            +" )"
+            +" AND ( EM_UNIT_NAME is null or  EM_UNIT_NAME NOT IN"
+                    +" (SELECT UNIT_NAME  FROM EM_EXPERT_BILL_FILTER_UNIT  WHERE EM_BILL_CODE = ?)"
+                +" ) "
+            +" AND EM_EXPERT_CODE IN (SELECT EM_EXPERT_CODE  FROM ZC_Em_Expert_Type_Join"
+                                   +"  WHERE em_type_code like ? || '%')"
+                                   +" AND EM_EXP_STATUS = 'enable'"
+            +" ORDER BY dbms_random.VALUE)"
+         +" WHERE rownum < 100";
   // 当前单据的专家类别、抽取数量、呼叫信息、短信信息
   private static final String GET_EVALUATION_CONDITION_LIST = "SELECT EC.EM_EXPERT_TYPE_CODE,EC.EXPERT_NUM,B.EM_CALL_INFO,B.EM_MSG_INFO FROM EM_EVALUATION_CONDITION EC, ZC_EM_EXPERT_PRO_BILL B WHERE EC.EM_BILL_CODE = B.EM_BILL_CODE AND B.EM_BILL_CODE = ?";
 
@@ -205,7 +231,7 @@ public class BillServer extends Thread {
         logger.debug("needExpertNumWithType="+needExpertNumWithType);
         logger.debug("selectedExpertNumWithType="+selectedExpertNumWithType);
         if (needExpertNumWithType > selectedExpertNumWithType) {
-          params = new Object[] { emBillCode, emBillCode, emBillCode, emBillCode, emExpertTypeCode, emExpertTypeCode };
+          params = new Object[] { emBillCode, emBillCode, emBillCode,emBillCode, emBillCode, emExpertTypeCode};
           List<Map<String, String>> expertList = df.queryToListMap(GET_EXPERT_LIST, params);
           logger.debug("获取当前单据上对应类别的专家，已经打过电话的、过滤的专家不在选择范围内 ");
           logger.debug(GET_EXPERT_LIST);
